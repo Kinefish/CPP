@@ -27,15 +27,27 @@ public:
 //    std::cout << t1._data << std::endl << Test::_staticData << std::endl;
 //    return 0;
 //}
+#include <chrono>
+#include "Header/LinkQueue.h"
 
-#include <vector>
 int main() {
-    std::vector<int> vec;
-    for (int i = 0; i < 7; i++)
-        vec.push_back(rand() % 100);
 
-    for (auto it = vec.begin(); it != vec.end(); ++it)
-        std::cout << *it << " ";
-    
+    LinkQue<int> linkQue;
+    // 获取开始时间
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // 执行需要计时的代码
+    for (int i = 0; i < 100000; ++i) {
+        linkQue.push(i);
+        linkQue.pop();
+    }
+
+    // 获取结束时间
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // 计算运行时间（单位：毫秒）
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    std::cout << "Time taken: " << duration << " ms" << std::endl;
     return 0;
 }
