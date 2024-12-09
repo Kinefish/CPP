@@ -20,6 +20,28 @@ LinkQue
 使用对象池,6ms
 差不多5倍优化
 */
+#include <iostream>
+#include <chrono>
+static void func() {
+	LinkQue<int> linkQue;
+	// 获取开始时间
+	auto start = std::chrono::high_resolution_clock::now();
+
+	// 执行需要计时的代码
+	for (int i = 0; i < 100000; ++i) {
+		linkQue.push(i);
+		linkQue.pop();
+	}
+
+	// 获取结束时间
+	auto end = std::chrono::high_resolution_clock::now();
+
+	// 计算运行时间（单位：毫秒）
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+	std::cout << "Time taken: " << duration << " ms" << std::endl;
+}
+
 template <typename T>
 class LinkQue {
 public:

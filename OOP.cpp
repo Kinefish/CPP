@@ -19,7 +19,40 @@
     成员方法, 常对象不能调用
     type func() {}
 */
+#include <iostream>
+class Test {
+public:
+    Test() {
+        std::cout << "TEST() FUNC CALLING" << std::endl;
+    }
+    ~Test() {
+        std::cout << "~TEST() FUNC CALLING" << std::endl;
+    }
+    void func() { std::cout << "Test::func()" << std::endl; }
+    static void static_func() { std::cout << "Test::static_fucn()" << std::endl; }
+    int _data;
+    static int _staticData;
+};
 
+int Test::_staticData = 0;
+int f1() {
+
+    Test t1;
+    int Test::* ptr = &Test::_data;
+    t1.*ptr = 30;
+
+    int* staticPtr = &Test::_staticData;
+    *staticPtr = 30;
+
+    void (Test:: * pfunc)() = &Test::func;
+    (t1.*pfunc)();
+
+    void(*staticFunc)() = &Test::static_func;
+    (*staticFunc)();
+
+    std::cout << t1._data << std::endl << Test::_staticData << std::endl;
+    return 0;
+}
 //void oop_f1();
 //void oop_f2();
 //#include <iostream>

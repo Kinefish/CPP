@@ -2,3 +2,5 @@
 x64/
 Debug/
 Studying.*
+*.exe
+*.obj
