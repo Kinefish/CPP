@@ -69,7 +69,126 @@
     只要Base有virtual function，那么他就会有vftable表
     并且派生类也会有vftable表，而且派生类有可能共用基类的vfptr
 */
+
+/*
+    哪些函数不能实现成虚函数？
+    
+    虚函数依赖:
+    对象内存->vptr->vftable->虚函数地址
+
+    构造函数完成，对象才存在，所以构造函数不能实现成虚函数，并且{}中全是静态绑定，不会发生动态绑定
+    构造函数中哪怕调用virtual function()，也是静态绑定
+    
+    static function()也不能实现成virtual，因为static不依赖对象
+
+    虚析构函数
+    什么时候将基类的析构函数实现成 虚函数 virtual ~Base(){}
+    Base* ptr = new Derive();的时候，也就是基类指针指向 堆 上的派生类
+    这样delete ptr的时候，由于Base类有虚函数->Base::vftable->Derive::vftable->自动virtual ~Derive()-> *ptr == class Derive
+    -> delete ptr会先找到~Derive() -> 避免内存泄露
+
+    Base b;
+    Derive* ptr = (Derive*)&b;
+    ptr->show();
+    动态绑定，并且b内存上只有Base对象，因此调用的是Base::show()
+
+*/
+
+/*
+    多态
+
+    静态多态
+    编译时的多态：函数重载（在同一个作用域内）、模板，发生的是静态绑定
+
+    动态多态
+    通过基类指针(引用)指向派生类，并且调用相应的virtual function，就会发生动态绑定
+    ，找到派生类的vfptr，接着找到vftable，调用派生类覆盖的virtual function
+*/
+
+/*
+    Base类中设计成virtual function() = 0;就是抽象类，一般将Base类设计成抽象类
+    抽象类不能实例化，但可以定义指针（引用），用于动态多态
+*/
+
+/*
+    Base:
+        virtual show(int i = 10)
+    Derive:
+        virtual show(int i = 20)
+    当基类指针（引用）指向派生类时，编译阶段编译器只会压入Base类的show()形参列表，因此只能访问到Base类的默认值，调用的依然是派生类的show
+*/
+
+/*
+    区分编译时的访问权限 和 运行时的访问权限
+    Base* ptr = new Derive();
+    ptr->show();
+    编译阶段：
+        编译器看ptr是Base*类型，public: Base::show()可以通过编译，运行阶段是动态绑定，调用的其实是Derive::show()，此时
+        private Derive::show()也可以调用，因为是用地址访问
+        private: Base::show()不可以通过编译，更别提运行了
+    
+*/
+/*
+    什么时候执行vfptr <- &vftable ?
+    构造函数执行前，开辟stack frame后执行
+*/
 #include <iostream>
+#include <string>
+class Animal {
+public:
+    Animal(const std::string& name)
+        :_name(name)
+    {}
+    virtual void bark() const = 0; //此时Animal是抽象类
+protected:
+    std::string _name;
+};
+
+class Cat : public Animal {
+public:
+    Cat(const std::string& name)
+        :Animal(name)
+    {}
+    void bark() const { std::cout << _name << " miao miao miao!" << std::endl; }
+};
+class Dog : public Animal {
+public:
+    Dog(const std::string& name)
+        :Animal(name)
+    {}
+    void bark() const { std::cout << _name << " wang wang wang!" << std::endl; }
+};
+
+/*
+    利用多态
+    基类指针（引用）指向派生类，调用virtual function的时候，进行动态绑定，找到animal的vfptr-> vftable -> 调用派生类的覆盖方法
+*/
+static void bark(const Animal& animal) { animal.bark(); }
+
+static void test() {
+    Cat cat("猫咪");
+    Dog dog("二哈");
+    bark(cat);  // 猫咪 miao miao miao!
+    bark(dog);  // 二哈 wang wang wang!
+    std::cout << "---------pointer----------" << std::endl;
+    
+    /*
+        通过交换cat和dog的vfptr，导致vftable是对方的，因此动态绑定后，调用的vftable中的virtual bark()其实是对方的
+    */
+    Animal* ptr1 = &cat;
+    Animal* ptr2 = &dog;
+
+    int* pp1 = (int*)ptr1;
+    int* pp2 = (int*)ptr2;
+    int tmp = pp1[0];
+    pp1[0] = pp2[0];
+    pp2[0] = tmp;
+
+    ptr1->bark();
+    ptr2->bark();
+
+}
+
 class Base {
 public:
 	Base(int data = 10)
