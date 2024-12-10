@@ -110,3 +110,32 @@
 			- }
 		- }
 	- increase，导致扩容情况下，会使容器原来的所有迭代器都失效，因为扩容会指向新的内存空间
+
+9.虚函数、虚析构和虚继承的问题
+-	虚函数
+	- 如果Base类存在虚函数，那么编译的时候Base类内存布局中就会多一个Base::vfptr指针，指向Base::vftable表，表中存有&Base::virtual function()
+	- Base::vfptr在Base类内存中的offset以及&RTTI（runtime type infomation），指向存有Base类的一些基本信息的地址
+-	派生类 继承 有虚函数的基类 后
+	- 派生类内存中的基类部分的vfptr指向Derive::vftable（其实就是复用Base类的这个vfptr指向自己的vftable，派生类没必要再开辟8字节存一个新的vfptr）
+	- 表中存的是关于Derive的数据，如果没有重写Base::virtual function()，那么只有offset和&RTTI指向改为Derive，仍然存有&Base::virtual function()
+	- 如果重写了Base::virtual function()，那么就会发生覆盖，将重写的&Derive::virtual function()覆盖表中被重写的&Base::virtual function()地址
+	- 其余没被重写&Base::virtual function()仍然留在Derive::vftable中
+-	虚析构
+	- 如果发生Base* ptr = new Derive();
+	- delete ptr的时候，如果不将Base::~Base()处理成virtual，那么会在delete ptr的时候析构不了Derive
+	- 如果Derive占用外部资源，会导致没有即使回收，发生内存泄露
+	- 因此需要处理成virtual ~Base()，delete的时候Derive::vftable中就会覆盖\&Base::~Base()，从而能执行\~Derive()，也就能顺利释放资源
+	- new的地址和ptr的值没有偏差，程序不会崩溃
+	- 主要问题是，无法调用~Derive()释放外部资源
+-	虚继承
+	- 虚继承会导致派生类的内存布局发生变化
+	- 新增vbptr指针，指向Derive::vbtable，表中存有vbptr在派生类内存布局中的offset以及基类部分转移后的offset
+	- 原本基类部分处于起始地址，会将基类部分转移到派生类的内存后
+	- 发生Base* ptr = new Derive();
+	- 由于进行虚继承，导致new的地址和返回的地址（ptr的值）有一定偏差，delete ptr的时候会导致free(ptr) invalid
+	- new的地址和最后delete的ptr不对，程序直接崩溃
+-	虚继承的时候，将~Base()处理成虚析构，就不会出现问题
+
+10.菱形继承，半菱形继承
+-	发生菱形继承、半菱形继承的时候，间接基类会重复定义，占用内存空间
+	- 将间接基类的到基类的继承定义为虚继承，可以将最终的派生类的内存中只留有一份简介基类的数据，其他基类存的是vbptr

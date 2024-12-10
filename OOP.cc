@@ -47,7 +47,7 @@
     a.一个类定义了virtual func()的时候，编译器会对这个类产生一个vftable
     vftable
     |-----------|
-    |&RTTI      |->"Base"(假设Base类定义了virtual function)，&RTTI（run-time type information）存的是常量字符串地址
+    |&RTTI      |->"Base"(假设Base类定义了virtual function)，&RTTI（run-time type information）存的是Base相关信息地址
     |-----------|
     |offset     |
     |-----------|
@@ -131,6 +131,41 @@
 /*
     什么时候执行vfptr <- &vftable ?
     构造函数执行前，开辟stack frame后执行
+*/
+
+/*
+    普通继承与虚继承在派生类内存布局上的区别
+    Base:
+        int _dataA;
+    Derive:
+        int _dataB;
+        普通继承                虚继承
+    |--------------|        |--------------     Derivbe::vbtable-------------
+    |Base::_dataA  |        |vbptr          ->  |     0(vbptr offset)       |
+    |--------------|        |Derive::_dataB     |     8(Base::_dataA offset)|
+    |Derive::_dataB|        |--------------
+    |              |        |Base::_dataA
+    
+    当发生虚继承的时候，派生类原本的内存布局由：|基类部分内存布局   |  -> |vbptr        |
+                                          |派生类部分布局    |     |派生类部分布局 |
+                                                                 |基类部分布局   |
+    并且基类指针指向派生类地址，无论是栈上还是堆上操作，ptr都会指向派生类内存中，基类部分开始的位置
+    因此在window vs 下
+    Base* ptr = new Derive();   //Derive是虚继承而来的情况下
+    ptr->show();    //正常调用
+    delete ptr;     //delete出现问题，因为从基类地址开始delete，导致派生类的内存泄露
+    
+    在linux下，编译器会自动从派生类起始地址开始delete，因此没问题
+    centos下也会有问题，其他linux系统不确定
+    Derive::new()0xa19eb0
+    Derive::show()
+    Base::delete()0xa19ebc
+    free(): invalid pointer
+    Aborted (core dumped)
+
+    注意内存对齐问题，有些编译器会默认使用内存对齐
+    强制1字节对齐可以用
+    #pragam pack(1)
 */
 #include <iostream>
 #include <string>
