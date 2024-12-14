@@ -3,6 +3,9 @@
 #define __VECTOR_H__
 #include "Allocator.h"
 
+/*
+    新增push_back()的引用折叠、forward语义
+*/
 template <typename T, typename Alloc = Allocator<T>> //使用默认的配置器，需要加<T>，不加的话只是模板名
 class Vector {
 public:
@@ -56,11 +59,22 @@ public:
         _end = _first + size;
         return *this;
     }
-    void push_back(const T& val) {//push val into vector _last
+    //void push_back(const T& val) {//push val into vector _last
+    //    if (full())
+    //        resize();
+    //    //*_last++ = val;
+    //    _allocator.construct(_last++, val);
+    //}
+    //void push_back(T&& val) {
+    //    if (full())
+    //        resize();
+    //    _allocator.construct(_last++, std::move(val));
+    //}
+    template <typename _Ty>
+    void push_back(_Ty&& src) {
         if (full())
             resize();
-        //*_last++ = val;
-        _allocator.construct(_last++, val);
+        _allocator.construct(_last++, std::forward<_Ty>(src));
     }
     void pop_back() { // pop val from vector _last;
         if (empty())
