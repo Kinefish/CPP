@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "Header/MyString.h"
-
+//#include "Header/MyString.h"
+#include "Header/SmartPointer.h"
 int main() {
-    MyStringTest::test01();
+    SmartPointerTest::test02();
     return 0;
 }

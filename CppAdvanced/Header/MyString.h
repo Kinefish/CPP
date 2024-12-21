@@ -29,10 +29,21 @@ public:
     }
     //左值引用的拷贝构造
     MyString& operator=(const MyString& str) {
+        /*
+        优化
+        通过拷贝构造一个tmpStr，同时进行旧资源的释放和新资源的替换
+        if(this != &str) {
+            MyString tmpStr(str);
+            char* instead_str = tmpStr._str;
+            tmpStr._str = _str;
+            _str = instead_str;
+        }
+        return *this;
+        */
         std::cout << "operator=(const MyString& str)" << std::endl;
         if (this == &str) return *this;
         delete[] _str;
-        _str = new char[strlen(str._str) + 1];
+        _str = new char[strlen(str._str) + 1];  //如果throw bad_alloc()，会导致丢失_str，所以还有优化的办法
         strcpy(_str, str._str);
         return *this;
     }
